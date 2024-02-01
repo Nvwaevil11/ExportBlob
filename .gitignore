@@ -1,0 +1,12 @@
+# 默认忽略的文件
+/shelf/
+/workspace.xml
+/.idea/
+*.log
+*.sqlite3
+*.json
+test*py
+/.venv/
+/venv/
+*.pyc
+/.gitee/
