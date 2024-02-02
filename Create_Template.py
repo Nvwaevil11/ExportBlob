@@ -13,8 +13,6 @@ from openpyxl.styles import PatternFill, Alignment
 from LoadFilePath import data_pardir, export_dir
 from ExtractZIP import file_name
 
-excel_path = export_dir / "XGS ML Alert SN.xlsx"
-
 
 def create_template():
     wb = openpyxl.Workbook()
@@ -73,8 +71,16 @@ def create_template():
     ws.column_dimensions['K'].width = 30
     # 加載albrt_file
     from LoadFilePath import alert_file_path
-    df = pd.read_csv(alert_file_path, usecols=["serial_number", "station_id", "uut_start", "model_sob_decision"
-        , "model_ice_decision", "model_bgi_decision"])
+    if 'ae34' in alert_file_path.stem:
+        df = pd.read_csv(alert_file_path, usecols=["serial_number", "station_id", "uut_start", "model_sob_decision"
+            , "model_ice_decision"])
+        excel_path = export_dir / "CGS ML Alert SN.xlsx"
+    elif 'station1614' in alert_file_path.stem:
+        df = pd.read_csv(alert_file_path, usecols=["serial_number", "station_id", "uut_start", "model_sob_decision"
+            , "model_ice_decision", "model_bgi_decision"])
+        excel_path = export_dir / "BGS ML Alert SN.xlsx"
+    else:
+        raise FileNotFoundError('alert_file文件丢失')
 
     # 插入信息：
     x = 2  # 在第一行开始写
@@ -107,12 +113,12 @@ def create_template():
 
         for path in file_name(unit_folder_path, r'^(SOBBK|ICEBK|BGI).*\.JPG$'):
             image = str(path)  # 返回文件名
-            image_type = re.findall(r'^(SOBBK|ICEBK|BGI).*\.JPG$', path.name)[0]
+            image_type = re.findall(r'^(SOBBK|ICEBK|BGI|SOB|ICE).*\.JPG$', path.name)[0]
             im = PILImage.open(path)
             w, h = im.size
             im.thumbnail((w // 3, h // 3))
             im.save(path, 'JPEG')
-            img_column = {'SOBBK': 'F', 'ICEBK': 'E', 'BGI': 'D'}.get(image_type, 'D')
+            img_column = {'SOB': 'F', 'ICE': 'E','SOBBK': 'F', 'ICEBK': 'E', 'BGI': 'D'}.get(image_type, 'D')
 
             # 获取图片
             img = Image(image)
@@ -128,8 +134,8 @@ def create_template():
         print('-----7.正在插入H欄 BGI Ml infor--------------------')
         for text_path in file_name(unit_folder_path, r'.*(SOBBK|ICEBK|BGI)\.txt'):
             text = str(text_path)  # 返回文件名
-            text_type = re.findall(r'.*(SOBBK|ICEBK|BGI)\.txt', text_path.name)[0]
-            y_offset = {'SOBBK': 8, 'ICEBK': 7, 'BGI': 6}.get(text_type, '6')
+            text_type = re.findall(r'.*(SOBBK|ICEBK|BGI|SOB|ICE)\.txt', text_path.name)[0]
+            y_offset = {'SOB': 8, 'ICE': 7,'SOBBK': 8, 'ICEBK': 7, 'BGI': 6}.get(text_type, '6')
             with open(text, "r", encoding='utf-8') as f:
                 content = f.read()
                 result1 = re.findall('.*,"issues":\[(.*)],.*', content)

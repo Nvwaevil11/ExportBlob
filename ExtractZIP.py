@@ -79,5 +79,5 @@ def decompression_ml_image_txt():
     print("---6.文件已完成第一步解壓: tgz ...")
     [_.unlink() for _ in file_name(data_zippardir, r'.*_blob777\.tgz$')]
     for tgz_file in file_name(data_zippardir, r'.*_log\.tgz$'):
-        untgz2folder(tgz_file, data_pardir, r'.*_FAIL_.*(SOBBK|ICEBK|BGI)\.(JPG|txt)$')
+        untgz2folder(tgz_file, data_pardir, r'.*_FAIL_.*(SOBBK|ICEBK|BGI|SOB|ICE)\.(JPG|txt)$')
         tgz_file.unlink()

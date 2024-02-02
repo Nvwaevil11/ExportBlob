@@ -58,7 +58,7 @@ def select_file():
     root.withdraw()  # 隐藏主窗口
     print(f"---3.选择AlertFailUnits文件，", end='....->')
     file_path = filedialog.askopenfilename(title='请选择AlertFailUnits文件',
-                                           filetypes=[('AlertFailUnits文件', '*_alert_*_units_*.csv')], )
+                                           filetypes=[('cgsAlertFailUnits文件', '*_ml_alert_*_units_ae34_*.csv;*_ml_alert_*_units_station1614_*.csv')], )
     if file_path != '':
         shutil.copy(file_path, alert_fail_units_dir)
         alert_file_path = alert_fail_units_dir / Path(file_path).name
