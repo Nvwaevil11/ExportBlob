@@ -10,3 +10,6 @@ test*py
 /venv/
 *.pyc
 /.gitee/
+/ExportFile/
+/LoadFile/
+/ParseFile/

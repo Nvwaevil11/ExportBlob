@@ -10,8 +10,7 @@ from PIL import Image as PILImage
 from openpyxl.drawing.image import Image
 from openpyxl.styles import Font
 from openpyxl.styles import PatternFill, Alignment
-from pathlib import Path
-from LoadFilePath import data_pardir,export_dir,alert_fail_units_dir,alert_file_path
+from LoadFilePath import data_pardir,export_dir,alert_fail_units_dir
 from ExtractZIP import file_name
 
 
@@ -74,6 +73,7 @@ def create_template():
     ws.column_dimensions['J'].width = 30
     ws.column_dimensions['K'].width = 30
     # 加載albrt_file
+    from LoadFilePath import alert_file_path
     df = pd.read_csv(alert_file_path, usecols=["serial_number", "station_id", "uut_start", "model_sob_decision"
         , "model_ice_decision", "model_bgi_decision"])
 
