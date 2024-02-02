@@ -1,5 +1,5 @@
 # @File: Create_Template.py
-# @Time: 2024/1/28 下午 10:32  
+# @Time: 2024/1/28 下午 10:32
 # @Author: Nan1_Chen
 # @Mail: Nan1_Chen@pegatroncorp.com
 
@@ -12,6 +12,7 @@ from openpyxl.styles import Font
 from openpyxl.styles import PatternFill, Alignment
 from LoadFilePath import data_pardir, export_dir
 from ExtractZIP import file_name
+from pprint import pprint
 
 
 def create_template():
@@ -23,7 +24,8 @@ def create_template():
     fille = PatternFill('solid', fgColor='adaaa6')  # 设置填充颜色为 橙色
     fille_NG = PatternFill('solid', fgColor='ff99cc')  # 设置填充颜色为 紅色
     fille_OK = PatternFill('solid', fgColor='AACF91')  # 设置填充颜色为 綠色
-    font = Font(u'Calibri', size=12, color='ffffff', bold=True, italic=False, strike=False)  # 设置字体样式
+    font = Font(u'Calibri', size=12, color='ffffff', bold=True,
+                italic=False, strike=False)  # 设置字体样式
     ws['a1'].fill = fille  # 应用填充样式在A1单元格
     ws['b1'].fill = fille  # 应用填充样式在B1单元格
     ws['c1'].fill = fille  # 应用填充样式在C1单元格
@@ -72,12 +74,12 @@ def create_template():
     # 加載albrt_file
     from LoadFilePath import alert_file_path
     if 'ae34' in alert_file_path.stem:
-        df = pd.read_csv(alert_file_path, usecols=["serial_number", "station_id", "uut_start", "model_sob_decision"
-            , "model_ice_decision"])
+        df = pd.read_csv(alert_file_path, usecols=[
+                         "serial_number", "station_id", "uut_start", "model_sob_decision", "model_ice_decision"])
         excel_path = export_dir / "CGS ML Alert SN.xlsx"
     elif 'station1614' in alert_file_path.stem:
-        df = pd.read_csv(alert_file_path, usecols=["serial_number", "station_id", "uut_start", "model_sob_decision"
-            , "model_ice_decision", "model_bgi_decision"])
+        df = pd.read_csv(alert_file_path, usecols=[
+                         "serial_number", "station_id", "uut_start", "model_sob_decision", "model_ice_decision", "model_bgi_decision"])
         excel_path = export_dir / "BGS ML Alert SN.xlsx"
     else:
         raise FileNotFoundError('alert_file文件丢失')
@@ -93,7 +95,8 @@ def create_template():
         # print(Units_Folder_Name)
         SN = Units_Folder_Name.split('_')
         # print(SN)
-        print(f"*****第 {kk} 個機臺開始插入信息************************************************************")
+        print(
+            f"*****第 {kk} 個機臺開始插入信息************************************************************")
         # 1.插入第一欄SN信息：
         print(f"-----1.正在插入A欄 Serial Number 信息: {SN[0]}---------")
         ws.cell(row=x, column=y).value = str(SN[0])
@@ -101,24 +104,31 @@ def create_template():
         for item in df["serial_number"]:
             if item == SN[0]:
                 # 2.插入第二欄Station ID信息：
-                print(f"-----2.正在插入B欄 Station ID 信息: {str(df['station_id'][ii])}----------------")
-                ws.cell(row=x, column=y + 1).value = str(df["station_id"][ii])  # Station ID
+                print(
+                    f"-----2.正在插入B欄 Station ID 信息: {str(df['station_id'][ii])}----------------")
+                # Station ID
+                ws.cell(row=x, column=y + 1).value = str(df["station_id"][ii])
                 # 3.插入第三欄Test Time信息：
-                print(f"-----3.正在插入C欄 Test Time 信息: {str(df['uut_start'][ii])} -------------")
-                ws.cell(row=x, column=y + 2).value = str(df["uut_start"][ii])  # Time
+                print(
+                    f"-----3.正在插入C欄 Test Time 信息: {str(df['uut_start'][ii])} -------------")
+                ws.cell(row=x, column=y +
+                        2).value = str(df["uut_start"][ii])  # Time
             ii += 1
 
         # 4.插入第四欄BGI Image信息：
         print('-----4.正在插入D欄 BGI圖片--------------------')
 
-        for path in file_name(unit_folder_path, r'^(SOBBK|ICEBK|BGI).*\.JPG$'):
-            image = str(path)  # 返回文件名
-            image_type = re.findall(r'^(SOBBK|ICEBK|BGI|SOB|ICE).*\.JPG$', path.name)[0]
-            im = PILImage.open(path)
+        for pic_path in file_name(unit_folder_path, r'^(SOBBK|ICEBK|BGI|SOB|ICE).*\.JPG$'):
+            print(pic_path.stem)
+            image = str(pic_path)  # 返回文件名
+            image_type = re.findall(
+                r'^(SOBBK|ICEBK|BGI|SOB|ICE).*\.JPG$', pic_path.name)[0]
+            im = PILImage.open(pic_path)
             w, h = im.size
             im.thumbnail((w // 3, h // 3))
-            im.save(path, 'JPEG')
-            img_column = {'SOB': 'F', 'ICE': 'E','SOBBK': 'F', 'ICEBK': 'E', 'BGI': 'D'}.get(image_type, 'D')
+            im.save(pic_path, 'JPEG')
+            img_column = {'SOB': 'F', 'ICE': 'E', 'SOBBK': 'F',
+                          'ICEBK': 'E', 'BGI': 'D'}.get(image_type, 'D')
 
             # 获取图片
             img = Image(image)
@@ -134,8 +144,10 @@ def create_template():
         print('-----7.正在插入H欄 BGI Ml infor--------------------')
         for text_path in file_name(unit_folder_path, r'.*(SOBBK|ICEBK|BGI)\.txt'):
             text = str(text_path)  # 返回文件名
-            text_type = re.findall(r'.*(SOBBK|ICEBK|BGI|SOB|ICE)\.txt', text_path.name)[0]
-            y_offset = {'SOB': 8, 'ICE': 7,'SOBBK': 8, 'ICEBK': 7, 'BGI': 6}.get(text_type, '6')
+            text_type = re.findall(
+                r'.*(SOBBK|ICEBK|BGI|SOB|ICE)\.txt', text_path.name)[0]
+            y_offset = {'SOB': 8, 'ICE': 7, 'SOBBK': 8,
+                        'ICEBK': 7, 'BGI': 6}.get(text_type, '6')
             with open(text, "r", encoding='utf-8') as f:
                 content = f.read()
                 result1 = re.findall('.*,"issues":\[(.*)],.*', content)
@@ -151,7 +163,8 @@ def create_template():
                     ws.cell(row=x, column=y + y_offset).value = str(result1)
                     ws.cell(row=x, column=y + y_offset).fill = fille_NG
 
-        print(f"*****第 {kk} 個機臺信息插入完成************************************************************")
+        print(
+            f"*****第 {kk} 個機臺信息插入完成************************************************************")
         print("                                                     ")
         x += 1
         kk += 1

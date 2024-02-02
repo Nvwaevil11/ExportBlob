@@ -1,5 +1,5 @@
 # @File: ExtractZIP.py
-# @Time: 2024/1/28 下午 01:39  
+# @Time: 2024/1/28 下午 01:39
 # @Author: Nan1_Chen
 # @Mail: Nan1_Chen@pegatroncorp.com
 
@@ -11,8 +11,7 @@ from zipfile import ZipFile
 from pathlib import Path
 import re
 from LoadFilePath import data_dir, data_zippardir, data_pardir
-
-root_path = Path(__file__).resolve().parent
+from pprint import pprint
 
 
 def unzip2folder(filename: Path, out_path: Path = None):
@@ -43,7 +42,8 @@ def untgz2folder(filename: Path, out_path: Path = None, filter_str: str = None):
                         continue
                 target_folder.mkdir(parents=True, exist_ok=True)
                 source = tar1.extractfile(member)
-                target_file = open(target_folder / Path(member.name).name, 'wb')
+                target_file = open(
+                    target_folder / Path(member.name).name, 'wb')
                 with source, target_file:
                     shutil.copyfileobj(source, target_file)
     return
@@ -79,5 +79,6 @@ def decompression_ml_image_txt():
     print("---6.文件已完成第一步解壓: tgz ...")
     [_.unlink() for _ in file_name(data_zippardir, r'.*_blob777\.tgz$')]
     for tgz_file in file_name(data_zippardir, r'.*_log\.tgz$'):
-        untgz2folder(tgz_file, data_pardir, r'.*_FAIL_.*(SOBBK|ICEBK|BGI|SOB|ICE)\.(JPG|txt)$')
+        untgz2folder(tgz_file, data_pardir,
+                     r'.*_FAIL_.*(SOBBK|ICEBK|BGI|SOB|ICE)\.(JPG|txt)$')
         tgz_file.unlink()

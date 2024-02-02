@@ -1,5 +1,5 @@
 # @File: LoadFilePath.py
-# @Time: 2024/1/28 上午 10:12  
+# @Time: 2024/1/28 上午 10:12
 # @Author: Nan1_Chen
 # @Mail: Nan1_Chen@pegatroncorp.com
 
@@ -9,6 +9,7 @@ import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
 import datetime
+from pprint import pprint
 
 root_path: Path = Path(__file__).resolve().parent
 load_dir: Path = root_path / "LoadFile"
@@ -21,15 +22,19 @@ data_pardir: Path = par_dir / "DataZip/Data"
 data_zippardir: Path = par_dir / "DataZip/DataZip"
 export_dir: Path = root_path / 'ExportFile'
 
+ml_station = 'XGS'
+
 
 def function_timer(func):  # 計時器
     def inner(*args, **kwargs):
         start = datetime.datetime.now()
-        print(f'{datetime.datetime.now()} Function "{func.__name__}" start running -->')
+        print(f'{datetime.datetime.now()} Function "{
+              func.__name__}" start running -->')
         result = func(*args, **kwargs)
         end = datetime.datetime.now()
         _ = (end - start).total_seconds()
-        print(f'{datetime.datetime.now()} Function "{func.__name__}" finished running in {_:.6f}s<--')
+        print(f'{datetime.datetime.now()} Function "{
+              func.__name__}" finished running in {_:.6f}s<--')
         return result
 
     return inner
@@ -54,6 +59,7 @@ def init_folders():
 
 def select_file():
     global alert_file_path
+    global ml_station
     root = tk.Tk()
     root.withdraw()  # 隐藏主窗口
     print(f"---3.选择AlertFailUnits文件，", end='....->')
@@ -62,6 +68,10 @@ def select_file():
     if file_path != '':
         shutil.copy(file_path, alert_fail_units_dir)
         alert_file_path = alert_fail_units_dir / Path(file_path).name
+        if '_ae34_' in file_path:
+            ml_station = 'CGS'
+        elif '_station1614_' in file_path:
+            ml_station = 'BGS'
         print(f"Done!!")
         print(f'-----复制选择的文件[{file_path}] 到 文件夹[{alert_fail_units_dir}].')
     else:
