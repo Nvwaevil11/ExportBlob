@@ -10,9 +10,8 @@ from PIL import Image as PILImage
 from openpyxl.drawing.image import Image
 from openpyxl.styles import Font
 from openpyxl.styles import PatternFill, Alignment
-from LoadFilePath import data_pardir,export_dir,alert_fail_units_dir
+from LoadFilePath import data_pardir, export_dir
 from ExtractZIP import file_name
-
 
 excel_path = export_dir / "XGS ML Alert SN.xlsx"
 
@@ -106,16 +105,15 @@ def create_template():
         # 4.插入第四欄BGI Image信息：
         print('-----4.正在插入D欄 BGI圖片--------------------')
 
-        for path in file_name(unit_folder_path,r'.*(SOBBK|ICEBK|BGI)\.JPG'):
+        for path in file_name(unit_folder_path, r'^(SOBBK|ICEBK|BGI).*\.JPG$'):
             image = str(path)  # 返回文件名
-            image_type = re.findall(r'.*(SOBBK|ICEBK|BGI)\.JPG',path.name)[0]
-            im = PILImage.open(image)
+            image_type = re.findall(r'^(SOBBK|ICEBK|BGI).*\.JPG$', path.name)[0]
+            im = PILImage.open(path)
             w, h = im.size
             im.thumbnail((w // 3, h // 3))
-            im.save(image)
-            img_column = {'SOBBK':'F','ICEBK':'E','BGI':'D'}.get(image_type,'D')
-            # 图片路径
-            img_file_path = image
+            im.save(path, 'JPEG')
+            img_column = {'SOBBK': 'F', 'ICEBK': 'E', 'BGI': 'D'}.get(image_type, 'D')
+
             # 获取图片
             img = Image(image)
             # 设置图片的大小
@@ -128,9 +126,9 @@ def create_template():
 
         # 7.插入第七欄BGI Issue信息：
         print('-----7.正在插入H欄 BGI Ml infor--------------------')
-        for text_path in file_name(unit_folder_path,r'.*(SOBBK|ICEBK|BGI)\.txt'):
+        for text_path in file_name(unit_folder_path, r'.*(SOBBK|ICEBK|BGI)\.txt'):
             text = str(text_path)  # 返回文件名
-            text_type = re.findall(r'.*(SOBBK|ICEBK|BGI)\.txt',text_path.name)[0]
+            text_type = re.findall(r'.*(SOBBK|ICEBK|BGI)\.txt', text_path.name)[0]
             y_offset = {'SOBBK': 8, 'ICEBK': 7, 'BGI': 6}.get(text_type, '6')
             with open(text, "r", encoding='utf-8') as f:
                 content = f.read()
@@ -164,5 +162,4 @@ def create_template():
 
 
 if __name__ == "__main__":
-
     create_template()

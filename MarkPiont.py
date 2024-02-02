@@ -6,157 +6,75 @@
 # @Software: PyCharm
 # --- --- --- --- --- --- --- --- ---
 
-
-import os
+from math import log2
 import re
-from glob import glob
-from LoadFilePath import alert_fail_units_dir,data_dir,alert_fail_units_pardir,data_pardir,data_zippardir
+from LoadFilePath import data_pardir
 from ExtractZIP import file_name
 import cv2
+from json import loads
 
 
-def MarkSOBimage():
-    paths = glob(data_pardir + r'//*//*//*//*SOBBK.txt')
-    kk = 1
-    for path in paths:
-        with open(path, "r", encoding='utf-8') as f:
-            content = f.read()
-            # ,"issues":["foreign_material"],
-            # ,"issues":["leakage"],
-            result = re.findall('.*,"issues":\[(.*)],.*', content)
-            result = " ".join(result)
-            if not result.strip():
-                print("該機臺sob無異常")
+def logmod(num: int):
+    if num <=0:
+        return []
+    ab = []
+    while True:
+        a = int(log2(num))
+        ab.append(a + 1)
+        num = num - 2 ** a
+        print(num)
+        if num == 0:
+            break
+    return ab
+
+def mark_bgi_ml_image():
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    for kk, unit_folder_path in enumerate(data_pardir.iterdir()):
+        print(f"--开始检查第 {kk} 個機臺{unit_folder_path.name} ML 信息")
+        for ml_response_path in file_name(unit_folder_path, r'.*(SOBBK|ICEBK|BGI)\.txt'):
+            ml_type = re.findall(r'.*(SOBBK|ICEBK|BGI)\.txt', ml_response_path.name)[0]
+            pic_path = ml_response_path.parent / (ml_response_path.stem + '.JPG')
+            
+            print(f"----第 {kk} 個機臺{ml_type}信息檢查开始")
+            with open(ml_response_path, "r", encoding='utf-8') as f:
+                content = f.read()
+            ml_response_status = re.findall(r'^HTTP/1.1 (\d+) (.*)$', content, re.M)
+            if ml_response_status:
+                status_code, response_message = ml_response_status[0]
             else:
-                print(eval(result))
-                with open(path, "r", encoding='utf-8') as f:
-                    content = f.read()
-                    result1 = re.findall('.*"bbox":\{(.*)},.*', content)
-                    result1 = " ".join(result1)
-                    # print(result)
-                    x1 = int(result1.split(':')[1].split(',')[0])
-                    y1 = int(result1.split(':')[2].split(',')[0])
-                    x2 = int(result1.split(':')[3].split(',')[0])
-                    y2 = int(result1.split(':')[4].split(',')[0])
-                    # print(x1, y1, x2, y2)
-                    x3 = int(x2) + int(y1)
-                    y3 = int(x1) + int(y2)
-                    print(f"異常位置的坐標：{x2, y2},{x3, y3}")
-                    SOB_PATH = path.split('.txt')[0] + '.JPG'
-                    SOB_StationName = SOB_PATH[-40:-30]
-                    print(SOB_StationName)
-                    img = cv2.imread(SOB_PATH)
-                    # time.sleep(3)
-                    cv2.rectangle(img, (int(x2), int(y2)), (x3, y3), (0, 0, 255), 2)
-                    font = cv2.FONT_HERSHEY_SIMPLEX
-                    cv2.putText(img, eval(result), (int(x2) - 25, int(y2) - 25), font, 1.5, (0, 0, 255), 3)
-                    cv2.putText(img, SOB_StationName, (200, 100), font, 3, (255, 0, 0), 5)
-                    # cv2.namedWindow('SOB', 0)
-                    # cv2.imshow("SOB", img)
-                    # cv2.waitKey(0)
-                    # cv2.destroyAllWindows()
-                    cv2.imwrite(SOB_PATH, img)
-        print(f"*****第 {kk} 個機臺信息檢查完成************************************************************")
-        print("                                                     ")
-        kk += 1
-
-
-# MarkSOBimage()
-
-
-def MarkICEimage():
-    paths = data_pardir.glob(r'//*//*//*//*ICEBK.txt')
-    kk = 1
-    for path in paths:
-        with open(path, "r", encoding='utf-8') as f:
-            content = f.read()
-            # ,"issues":["foreign_material"],
-            # ,"issues":["leakage"],
-            result = re.findall('.*,"issues":\[(.*)],.*', content)
-            result = " ".join(result)
-            if not result.strip():
-                print("該機臺ice無異常")
+                status_code, response_message = ('', '')
+            print('----', status_code, response_message)
+            
+            result = re.findall(r'^\{.*}$', content, re.M)
+            if result:
+                ml_result = loads(result[0])
             else:
-                print(eval(result))
-                with open(path, "r", encoding='utf-8') as f:
-                    content = f.read()
-                    result1 = re.findall('.*"bbox":\{(.*)},.*', content)
-                    result1 = " ".join(result1)
-                    # print(result)
-                    x1 = int(result1.split(':')[1].split(',')[0])
-                    y1 = int(result1.split(':')[2].split(',')[0])
-                    x2 = int(result1.split(':')[3].split(',')[0])
-                    y2 = int(result1.split(':')[4].split(',')[0])
-                    # print(x1, y1, x2, y2)
-                    x3 = int(x2) + int(y1)
-                    y3 = int(x1) + int(y2)
-                    print(f"異常位置的坐標：{x2, y2},{x3, y3}")
-                    SOB_PATH = path.split('.txt')[0] + '.JPG'
-                    SOB_StationName = SOB_PATH[-40:-30]
-                    img = cv2.imread(SOB_PATH)
-                    cv2.rectangle(img, (int(x2), int(y2)), (x3, y3), (0, 0, 255), 2)
-                    font = cv2.FONT_HERSHEY_SIMPLEX
-                    cv2.putText(img, eval(result), (int(x2) - 25, int(y2) - 25), font, 1.5, (0, 0, 255), 3)
-                    cv2.putText(img, SOB_StationName, (200, 100), font, 3, (255, 0, 0), 5)
-                    # cv2.namedWindow('SOB', 0)
-                    # cv2.imshow("SOB", img)
-                    # cv2.waitKey(0)
-                    # cv2.destroyAllWindows()
-                    cv2.imwrite(SOB_PATH, img)
-        print(f"*****第 {kk} 個機臺信息檢查完成************************************************************")
-        print("                                                     ")
-        kk += 1
-
-
-# MarkICEimage()
-
-
-def MarkBGIimage():
-    kk = 1
-    for path in file_name(data_pardir,r'.*(SOBBK|ICEBK|BGI)\.txt'):
-        with open(path, "r", encoding='utf-8') as f:
-            content = f.read()
-            # ,"issues":["foreign_material"],
-            # ,"issues":["leakage"],
-            result = re.findall('.*,"issues":\[(.*)],.*', content)
-            result = " ".join(result)
-            if not result.strip():
-                print("該機臺bgi無異常")
+                ml_result = {}
+            ml_pass_fail = ml_result.get('decision', status_code)
+            pic_new_name = f'{ml_type}_{"_".join(pic_path.stem.split('.')[:3])}_{ml_pass_fail}'
+            if ml_pass_fail == 0:
+                print('------', f"該機臺{ml_type}無異常")
+                pic_path = ml_response_path.parent / (ml_response_path.stem + '.JPG')
+                img = cv2.imread(str(pic_path))
+                cv2.putText(img, pic_new_name, (200, 100), font, 3, (255, 0, 0), 5)
+                cv2.imwrite(str(pic_path.parent / f'{pic_new_name}{pic_path.suffix}'), img)
             else:
-                print(eval(result))
-                with open(path, "r", encoding='utf-8') as f:
-                    content = f.read()
-                    result1 = re.findall('.*"bbox":\{(.*)},.*', content)
-                    result1 = " ".join(result1)
-                    # print(result)
-                    x1 = int(result1.split(':')[1].split(',')[0])
-                    y1 = int(result1.split(':')[2].split(',')[0])
-                    x2 = int(result1.split(':')[3].split(',')[0])
-                    y2 = int(result1.split(':')[4].split(',')[0])
-                    # print(x1, y1, x2, y2)
-                    x3 = int(x2) + int(y1)
-                    y3 = int(x1) + int(y2)
-                    print(f"異常位置的坐標：{x2, y2},{x3, y3}")
-                    SOB_PATH =path.parent / ( path.stem + '.JPG')
-                    # print(ppp)
-                    SOB_StationName = SOB_PATH.stem[-38:-28]
-                    img = cv2.imread(str(SOB_PATH))
-                    cv2.rectangle(img, (int(x2), int(y2)), (x3, y3), (0, 0, 255), 2)
-                    font = cv2.FONT_HERSHEY_SIMPLEX
-                    cv2.putText(img, eval(result), (int(x2) - 25, int(y2) - 25), font, 1.5, (0, 0, 255), 3)
-                    cv2.putText(img, SOB_StationName, (200, 100), font, 3, (255, 0, 0), 5)
-                    # cv2.namedWindow('SOB', 0)
-                    # cv2.imshow("SOB", img)
-                    # cv2.waitKey(0)
-                    # cv2.destroyAllWindows()
-                    cv2.imwrite(str(SOB_PATH), img)
-        print(f"*****第 {kk} 個機臺信息檢查完成************************************************************")
-        print("                                                     ")
-        kk += 1
+                print('------', ml_result)
+                boxes = ml_result.get('bboxes', [])
+                issue_flags = logmod(ml_result.get('issue_flags',0))
+                roi_flags = logmod(ml_result.get('roi_flags',0))
+                print(issue_flags,roi_flags)              
+                img = cv2.imread(str(pic_path))
+                for box in boxes:
+                    hh, ww, xx, yy = box['bbox'].values()
+                    cv2.rectangle(img, (xx, yy), (xx + ww, yy + hh), (0, 0, 255), 2)
+                
+                    cv2.putText(img, box['class_name'], (xx - 25, yy - 25), font, 1.5, (0, 0, 255), 3)
+                cv2.putText(img, pic_new_name, (200, 100), font, 3, (255, 0, 0), 5)
+                cv2.imwrite(str(pic_path.parent / f'{pic_new_name}{pic_path.suffix}'), img)
+            print(f"----第 {kk} 個機臺{ml_type}信息檢查完成")
+        print(f"--完成检查第 {kk} 個機臺{unit_folder_path.name} ML 信息\n")
 
-# MarkBGIimage()
-#
-# if "__name__" == "__main__":
-#     MarkSOBimage()
-#     MarkICEimage()
-#     MarkBGIimage()
+
+if __name__ == "__main__":
+    mark_bgi_ml_image()

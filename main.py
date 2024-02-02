@@ -3,7 +3,6 @@
 # @Author: Nan1_Chen
 # @Mail: Nan1_Chen@pegatroncorp.com
 import datetime
-
 import Create_Template
 import ExtractZIP
 import LoadFilePath
@@ -17,11 +16,8 @@ def main():
     LoadFilePath.init_folders()
     LoadFilePath.select_file()
     ExtractZIP.decompression_ml_image_txt()
-    MarkPiont.MarkBGIimage()
-    print('3')
-
+    MarkPiont.mark_bgi_ml_image()
     Create_Template.create_template()
-
     current_end_time = datetime.datetime.now()
     print(f"結束時間：{current_end_time}")
     a = round(((current_end_time - current_start_time).seconds / 60), 2)

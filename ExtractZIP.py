@@ -5,19 +5,16 @@
 
 # @Software: PyCharm
 # --- --- --- --- --- --- --- --- ---
-import glob
-import os
 import shutil
 import tarfile
 from zipfile import ZipFile
 from pathlib import Path
 import re
-from LoadFilePath import data_dir, data_zippardir, data_pardir, function_timer
+from LoadFilePath import data_dir, data_zippardir, data_pardir
 
 root_path = Path(__file__).resolve().parent
 
 
-@function_timer
 def unzip2folder(filename: Path, out_path: Path = None):
     if not out_path:
         out_path = filename.parent
@@ -29,7 +26,6 @@ def unzip2folder(filename: Path, out_path: Path = None):
                         shutil.copyfileobj(source, target_file)
 
 
-@function_timer
 def untgz2folder(filename: Path, out_path: Path = None, filter_str: str = None):
     member: tarfile.TarInfo
     if not out_path:
@@ -74,7 +70,7 @@ def file_name(
 
 def decompression_ml_image_txt():
     print("---5.文件正在解壓 zip -> tgz...")
-    for zip_file_index,zip_file in enumerate(file_name(data_dir, r'data.*\.zip')):
+    for zip_file_index, zip_file in enumerate(file_name(data_dir, r'data.*\.zip')):
         unzip2folder(zip_file, data_zippardir)
         print(f'-----解压第{zip_file_index + 1}个压缩包[{zip_file}],', end='...->')
         zip_file.unlink()
@@ -83,10 +79,5 @@ def decompression_ml_image_txt():
     print("---6.文件已完成第一步解壓: tgz ...")
     [_.unlink() for _ in file_name(data_zippardir, r'.*_blob777\.tgz$')]
     for tgz_file in file_name(data_zippardir, r'.*_log\.tgz$'):
-        untgz2folder(tgz_file, data_pardir,r'.*_FAIL_.*(SOBBK|ICEBK|BGI)\.(JPG|txt)$')
+        untgz2folder(tgz_file, data_pardir, r'.*_FAIL_.*(SOBBK|ICEBK|BGI)\.(JPG|txt)$')
         tgz_file.unlink()
-
-
-
-
-
