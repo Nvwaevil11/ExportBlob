@@ -12,12 +12,15 @@ from openpyxl.styles import Font
 from openpyxl.styles import PatternFill, Alignment
 from LoadFilePath import data_pardir, export_dir
 from ExtractZIP import file_name
+from MarkPiont import get_alert_list
 from pprint import pprint
 
 
 def create_template():
+    alert_list = get_alert_list()
     wb = openpyxl.Workbook()
     ws = wb.active
+    print(type(ws))
 
     # 格式設置
     ws.row_dimensions[1].height = 40
@@ -71,18 +74,6 @@ def create_template():
     ws.column_dimensions['I'].width = 15
     ws.column_dimensions['J'].width = 30
     ws.column_dimensions['K'].width = 30
-    # 加載albrt_file
-    from LoadFilePath import alert_file_path
-    if 'ae34' in alert_file_path.stem:
-        df = pd.read_csv(alert_file_path, usecols=[
-                         "serial_number", "station_id", "uut_start", "model_sob_decision", "model_ice_decision"])
-        excel_path = export_dir / "CGS ML Alert SN.xlsx"
-    elif 'station1614' in alert_file_path.stem:
-        df = pd.read_csv(alert_file_path, usecols=[
-                         "serial_number", "station_id", "uut_start", "model_sob_decision", "model_ice_decision", "model_bgi_decision"])
-        excel_path = export_dir / "BGS ML Alert SN.xlsx"
-    else:
-        raise FileNotFoundError('alert_file文件丢失')
 
     # 插入信息：
     x = 2  # 在第一行开始写
@@ -91,29 +82,27 @@ def create_template():
 
     for unit_folder_path in data_pardir.iterdir():
         print(unit_folder_path)
-        Units_Folder_Name = unit_folder_path.name  # 返回文件名
-        # print(Units_Folder_Name)
-        SN = Units_Folder_Name.split('_')
+        sn = unit_folder_path.name.split('_')[0]
         # print(SN)
         print(
             f"*****第 {kk} 個機臺開始插入信息************************************************************")
         # 1.插入第一欄SN信息：
-        print(f"-----1.正在插入A欄 Serial Number 信息: {SN[0]}---------")
-        ws.cell(row=x, column=y).value = str(SN[0])
-        ii = 0
-        for item in df["serial_number"]:
-            if item == SN[0]:
-                # 2.插入第二欄Station ID信息：
-                print(
-                    f"-----2.正在插入B欄 Station ID 信息: {str(df['station_id'][ii])}----------------")
-                # Station ID
-                ws.cell(row=x, column=y + 1).value = str(df["station_id"][ii])
-                # 3.插入第三欄Test Time信息：
-                print(
-                    f"-----3.正在插入C欄 Test Time 信息: {str(df['uut_start'][ii])} -------------")
-                ws.cell(row=x, column=y +
-                        2).value = str(df["uut_start"][ii])  # Time
-            ii += 1
+        print(f"-----1.正在插入A欄 Serial Number 信息: {sn}---------")
+        ws.cell(row=x, column=y).value = sn
+        if unit_folder_path.name in alert_list:
+            ml_info = alert_list[unit_folder_path.name]
+            station_id = ml_info.get('station_id')
+            test_time = ml_info.get('uut_start')
+            # 2.插入第二欄Station ID信息：
+            print(
+                f"-----2.正在插入B欄 Station ID 信息: {station_id}----------------")
+            # Station ID
+            ws.cell(row=x, column=y + 1).value = station_id
+            # 3.插入第三欄Test Time信息：
+            print(
+                f"-----3.正在插入C欄 Test Time 信息: {test_time} -------------")
+            ws.cell(row=x, column=y +
+                    2).value = test_time  # Time
 
         # 4.插入第四欄BGI Image信息：
         print('-----4.正在插入D欄 BGI圖片--------------------')
@@ -132,13 +121,15 @@ def create_template():
 
             # 获取图片
             img = Image(image)
+            img.anchor = img_column + str(x)
             # 设置图片的大小
-            img.width, img.height = (110, 110)
+            img.width, img.height = (100, 100)
             # 设置表格的宽20和高85
             ws.column_dimensions[img_column].width = 20
             ws.row_dimensions[x].height = 85
             # 图片插入名称对应单元格
-            ws.add_image(img, anchor=img_column + str(x))
+            ws.add_image(img)
+
 
         # 7.插入第七欄BGI Issue信息：
         print('-----7.正在插入H欄 BGI Ml infor--------------------')
@@ -164,8 +155,9 @@ def create_template():
                     ws.cell(row=x, column=y + y_offset).value = str(result1)
                     ws.cell(row=x, column=y + y_offset).fill = fille_NG
             else:
-                result1 = ''
-
+                result1 = 'not found response body'
+                ws.cell(row=x, column=y + y_offset).value = str(result1)
+                ws.cell(row=x, column=y + y_offset).fill = fille_NG
         print(
             f"*****第 {kk} 個機臺信息插入完成************************************************************")
         print("                                                     ")
@@ -179,6 +171,8 @@ def create_template():
     for iiii in range(1, max_rows + 1):
         for jjjj in range(1, max_columns + 1):
             ws.cell(iiii, jjjj).alignment = align
+    from LoadFilePath import ml_station
+    excel_path = export_dir / f'{ml_station} ML Alert SN re-judge tracker list.xlsx'
     wb.save(excel_path)
     wb.close()
 

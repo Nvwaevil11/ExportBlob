@@ -36,12 +36,10 @@ def get_alert_list() -> dict:
         df['unit_folder_name'] = [f'{_[0]}_{_[1]}_{_[2].strftime("%Y%m%d%H%M%S")}' for _ in df.index]
         df.reset_index(inplace=True)
         df.set_index(['unit_folder_name'], inplace=True)
-        print(df.dtypes)
         df = df.convert_dtypes()
         for loc, col in enumerate(df.columns):
             if col.endswith('response_code'):
                 df.insert(loc, col.replace('response_code','response_status'), df[col].apply(lambda x: response_status[x]))
-        print(df.dtypes)
         return df.transpose().to_dict()
     else:
         raise FileNotFoundError('alert_file文件丢失')
