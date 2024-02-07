@@ -8,34 +8,64 @@
 
 from math import log2
 import re
-from LoadFilePath import data_pardir
-from ExtractZIP import file_name
+from LoadFilePath import data_pardir, select_file, init_folders
+from ExtractZIP import file_name, decompression_ml_image_txt
 import cv2
 from pathlib import Path
 from json import loads
 from pprint import pprint
+import pandas as pd
 
 Issues = {1: "Flared Bat-Ear", 2: "Open Side-Fold", 3: "Exposed Matal", 4: "Puncture", 5: "Liquid", 6: "Swelling",
           7: "Other", 8: "Deformed Spring", 9: "Foreign Material",
           10: "Extra Screw"}
 
-ml_types_dict = {'XGS': ['SOBBK', 'ICEBK', 'BGI', 'SOB', 'ICE'], 'BGS': ['SOBBK', 'ICEBK', 'BGI'],
+ml_types_dict = {'XGS': ['SOBBK', 'ICEBK', 'BGI', 'SOB', 'ICE'], 'BGS1': ['SOBBK', 'ICEBK', 'BGI'],
                  'CGS': ['SOB', 'ICE']}
+
+response_status = {200: 'OK', 400: 'Bad request', 403: 'Forbidden', 404: 'Not found', 405: 'Method not allowed',
+                   413: 'Payload too large', 417: 'Expectation Failed', 422: 'Unprocessable entity',
+                   500: 'Internal server error', 503: 'Service unavailable', 520: 'Internal model error'}
+
+
+def get_alert_list() -> dict:
+    from LoadFilePath import alert_file_path
+    if alert_file_path.suffix == '.csv':
+        df = pd.read_csv(alert_file_path, parse_dates=['uut_start', 'uut_stop'])
+        df.set_index(['serial_number', 'test_result', 'uut_start'], inplace=True)
+        df['unit_folder_name'] = [f'{_[0]}_{_[1]}_{_[2].strftime("%Y%m%d%H%M%S")}' for _ in df.index]
+        df.reset_index(inplace=True)
+        df.set_index(['unit_folder_name'], inplace=True)
+        print(df.dtypes)
+        df = df.convert_dtypes()
+        for loc, col in enumerate(df.columns):
+            if col.endswith('response_code'):
+                df.insert(loc, col.replace('response_code','response_status'), df[col].apply(lambda x: response_status[x]))
+        print(df.dtypes)
+        return df.transpose().to_dict()
+    else:
+        raise FileNotFoundError('alert_file文件丢失')
 
 
 class UnitFolder(object):
 
-    def __init__(self, unit_folder_path: Path, station_name: str = 'BGS'):
-        self._station_name = station_name
-        self._ml_types = ml_types_dict.get(station_name, ml_types_dict['XGS'])
-        if unit_folder_path.is_dir():
-            self._folder_path = unit_folder_path
-        elif unit_folder_path.is_file():
-            print(
-                f'Waring: 初始化路径[{unit_folder_path}]是文件,不是目录,强制转换为文件的父目录[unit_folder_path.parent]')
-            self._folder_path = unit_folder_path.parent
+    def __init__(self, unit_folder_path: Path, ml_info: dict):
+        self.test_data = ml_info
+        self._station_name = ml_info.get('display_name', 'XGS')
+        self._ml_types = ml_types_dict.get(self._station_name, ml_types_dict['XGS'])
+        if unit_folder_path.exists():
+            if unit_folder_path.is_dir():
+                self._folder_path = unit_folder_path
+            elif unit_folder_path.is_file():
+                print(
+                    f'Waring: 初始化路径[{unit_folder_path}]是文件,不是目录,强制转换为文件的父目录[unit_folder_path.parent]')
+                self._folder_path = unit_folder_path.parent
+            else:
+                raise TypeError(f'Error:初始化失败,初始化路径[{unit_folder_path}]类型错误,应该为目录或者文件.')
         else:
-            raise TypeError(f'Error:初始化失败,初始化路径[{unit_folder_path}]类型错误,应该为目录或者文件.')
+            print(f'{unit_folder_path}不存在,創建空目錄防止報錯.')
+            unit_folder_path.mkdir(parents=True, exist_ok=True)
+            self._folder_path = unit_folder_path
 
     @property
     def unit_folder_path(self):
@@ -116,7 +146,7 @@ def mark_bgi_ml_image():
                 print('------', 'ml_response_status:',
                       [status_code, response_message])
             else:
-                status_code, response_message = ('', '')
+                status_code, response_message = ('404', 'not_found_response_status')
                 print('------', 'ml_response_status:',
                       [status_code, response_message])
 
@@ -125,8 +155,8 @@ def mark_bgi_ml_image():
                 ml_result = loads(result[0])
             else:
                 ml_result = {}
-            ml_pass_fail = ml_result.get('decision', status_code)
-            pic_new_name = f'{ml_type}_{"_".join(pic_path.stem.split('.')[:3])}_{ml_pass_fail}'
+            ml_pass_fail = ml_result.get('decision', -2)
+            pic_new_name = f'{ml_type}_{"_".join(pic_path.stem.split('.')[:3])}_{ml_pass_fail}_{status_code}({response_message})'
             target_pic_path = str(
                 pic_path.parent / f'{pic_new_name}{pic_path.suffix}')
             print('------', f'目标图片路径{target_pic_path}')
@@ -158,7 +188,14 @@ def mark_bgi_ml_image():
 
 
 if __name__ == "__main__":
-    for kk, test_folder_path in enumerate(data_pardir.iterdir()):
-        test_folder = UnitFolder(test_folder_path, station_name='CGS')
-        print(f'第{kk + 1}个{test_folder.station_name}UnitFolder[{test_folder.unit_folder_path}]读取成功..')
+    init_folders()
+    select_file()
+    decompression_ml_image_txt()
+    alert_list = get_alert_list()
+    from LoadFilePath import ml_station
+
+    pprint(alert_list)
+    for test_folder_path, test_data in alert_list.items():
+        print(test_folder_path, test_data)
+        test_folder = UnitFolder(data_pardir / test_folder_path, test_data)
         pprint(test_folder.parse_ml_folder())

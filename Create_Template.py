@@ -150,9 +150,10 @@ def create_template():
                         'ICEBK': 7, 'BGI': 6}.get(text_type, '6')
             with open(text, "r", encoding='utf-8') as f:
                 content = f.read()
+            result = re.findall(r'^\{.*}$', content, re.M)
+            if result:
                 result1 = re.findall('.*,"issues":\[(.*)],.*', content)
                 result1 = " ".join(result1)
-
                 if not result1.strip():
                     # print("該機臺bgi無異常")
                     ws.cell(row=x, column=y + y_offset).value = "no issue"
@@ -162,6 +163,8 @@ def create_template():
                     # print(result1)
                     ws.cell(row=x, column=y + y_offset).value = str(result1)
                     ws.cell(row=x, column=y + y_offset).fill = fille_NG
+            else:
+                result1 = ''
 
         print(
             f"*****第 {kk} 個機臺信息插入完成************************************************************")

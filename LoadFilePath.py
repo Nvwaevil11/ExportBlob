@@ -9,7 +9,6 @@ import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
 import datetime
-from pprint import pprint
 
 root_path: Path = Path(__file__).resolve().parent
 load_dir: Path = root_path / "LoadFile"
@@ -28,13 +27,11 @@ ml_station = 'XGS'
 def function_timer(func):  # 計時器
     def inner(*args, **kwargs):
         start = datetime.datetime.now()
-        print(f'{datetime.datetime.now()} Function "{
-              func.__name__}" start running -->')
+        print(f'{datetime.datetime.now()} Function "{func.__name__}" start running -->')
         result = func(*args, **kwargs)
         end = datetime.datetime.now()
         _ = (end - start).total_seconds()
-        print(f'{datetime.datetime.now()} Function "{
-              func.__name__}" finished running in {_:.6f}s<--')
+        print(f'{datetime.datetime.now()} Function "{func.__name__}" finished running in {_:.6f}s<--')
         return result
 
     return inner
@@ -64,7 +61,13 @@ def select_file():
     root.withdraw()  # 隐藏主窗口
     print(f"---3.选择AlertFailUnits文件，", end='....->')
     file_path = filedialog.askopenfilename(title='请选择AlertFailUnits文件',
-                                           filetypes=[('cgsAlertFailUnits文件', '*_ml_alert_*_units_ae34_*.csv;*_ml_alert_*_units_station1614_*.csv')], )
+                                           filetypes=[('AlertAbnormalUnits文件',
+                                                       f'*_ml_alert_abnormal_units_ae34_*.csv;'
+                                                       f'*_ml_alert_abnormal_units_station1614_*.csv'),
+                                                      ('AlertFailUnits文件',
+                                                       f'*_ml_alert_fail_units_ae34_*.csv;'
+                                                       f'*_ml_alert_fail_units_station1614_*.csv'),
+                                                      ])
     if file_path != '':
         shutil.copy(file_path, alert_fail_units_dir)
         alert_file_path = alert_fail_units_dir / Path(file_path).name
