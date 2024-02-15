@@ -15,6 +15,7 @@ from pathlib import Path
 from json import loads
 from pprint import pprint
 import pandas as pd
+from InsertImage import MLAlertTable
 
 Issues = {1: "Flared Bat-Ear", 2: "Open Side-Fold", 3: "Exposed Matal", 4: "Puncture", 5: "Liquid", 6: "Swelling",
           7: "Other", 8: "Deformed Spring", 9: "Foreign Material",
@@ -26,6 +27,8 @@ ml_types_dict = {'XGS': ['SOBBK', 'ICEBK', 'BGI', 'SOB', 'ICE'], 'BGS1': ['SOBBK
 response_status = {200: 'OK', 400: 'Bad request', 403: 'Forbidden', 404: 'Not found', 405: 'Method not allowed',
                    413: 'Payload too large', 417: 'Expectation Failed', 422: 'Unprocessable entity',
                    500: 'Internal server error', 503: 'Service unavailable', 520: 'Internal model error'}
+
+ml_file_suffixes = ['txt', 'JPG']
 
 
 def get_alert_list() -> dict:
@@ -39,7 +42,8 @@ def get_alert_list() -> dict:
         df = df.convert_dtypes()
         for loc, col in enumerate(df.columns):
             if col.endswith('response_code'):
-                df.insert(loc, col.replace('response_code','response_status'), df[col].apply(lambda x: response_status[x]))
+                df.insert(loc, col.replace('response_code', 'response_status'),
+                          df[col].apply(lambda x: response_status[x]))
         return df.transpose().to_dict()
     else:
         raise FileNotFoundError('alert_file文件丢失')
@@ -51,6 +55,7 @@ class UnitFolder(object):
         self.test_data = ml_info
         self._station_name = ml_info.get('display_name', 'XGS')
         self._ml_types = ml_types_dict.get(self._station_name, ml_types_dict['XGS'])
+        self._ml_pattern = fr'.*\.({"|".join(self._ml_types)})\.({"|".join(ml_file_suffixes)})$'
         if unit_folder_path.exists():
             if unit_folder_path.is_dir():
                 self._folder_path = unit_folder_path
@@ -74,17 +79,16 @@ class UnitFolder(object):
         return self._station_name
 
     def parse_ml_folder(self) -> dict:
-        file_suffixes = ['txt', 'JPG']
         ml_folder_files = {}
-        for ml_type in self._ml_types:
-            ml_files = file_name(
-                self._folder_path, fr'.*\.{ml_type}\.({"|".join(file_suffixes)})$')
-            if ml_files:
-                ml_folder_files.update(
-                    {ml_type[:3]: {_.suffix[1:]: _ for _ in ml_files}})
-            else:
-                ml_folder_files.update({ml_type[:3]: {}})
-        return ml_folder_files
+        ml_files = file_name(
+            self._folder_path, self._ml_pattern)
+        if ml_files:
+            for ml_file in ml_files:
+                ml_type, ml_suffix = re.findall(self._ml_pattern, ml_file.name)[0]
+                self.test_data.update({f'{ml_type[:3]}_{ml_suffix}': str(ml_file)})
+        else:
+            self.test_data = self.test_data
+        return self.test_data
 
 
 def parse_ml_folder(unit_folder: Path, ml_types: list = None, file_suffixes: list = None) -> dict:
@@ -100,7 +104,7 @@ def parse_ml_folder(unit_folder: Path, ml_types: list = None, file_suffixes: lis
             unit_folder, fr'.*\.{ml_type}\.({"|".join(file_suffixes)})$')
         if ml_files:
             ml_folder_files.update(
-                {ml_type[:3]: {_.suffix[1:]: _ for _ in ml_files}})
+                {ml_type[:3]: {_.suffix[1:]: str(_) for _ in ml_files}})
         else:
             ml_folder_files.update({ml_type[:3]: {}})
     return {unit_folder.name: ml_folder_files}
@@ -193,7 +197,18 @@ if __name__ == "__main__":
     from LoadFilePath import ml_station
 
     pprint(alert_list)
+    new_list = []
     for test_folder_path, test_data in alert_list.items():
-        print(test_folder_path, test_data)
         test_folder = UnitFolder(data_pardir / test_folder_path, test_data)
-        pprint(test_folder.parse_ml_folder())
+        new_list.append(test_folder.parse_ml_folder())
+    print(new_list)
+    df = pd.DataFrame(data=new_list)
+    print(df)
+    cols = list(df.columns)
+    new_cols = ['serial_number', 'uut_start', 'display_name', 'station_id', 'model_sob_decision', 'model_ice_decision',
+                'model_bgi_decision', 'model_sob_no_retest', 'model_sob_response_status', 'model_ice_no_retest',
+                'model_ice_response_status', 'model_bgi_response_status', 'model_bgi_no_retest', 'BGI_JPG', 'BGI_txt',
+                'ICE_JPG', 'ICE_txt', 'SOB_JPG', 'SOB_txt']
+    df = df[[_ for _ in new_cols if _ in cols]]
+    add_image = MLAlertTable(test_info=df)
+    add_image.workbook.save(r'D:\Users\Xiaoze_Wang\Desktop\BGS ML Alert SN re-judge tracker list2.xlsx')

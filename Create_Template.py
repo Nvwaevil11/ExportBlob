@@ -5,7 +5,7 @@
 
 import re
 import openpyxl
-import pandas as pd
+from json import loads
 from PIL import Image as PILImage
 from openpyxl.drawing.image import Image
 from openpyxl.styles import Font
@@ -13,7 +13,6 @@ from openpyxl.styles import PatternFill, Alignment
 from LoadFilePath import data_pardir, export_dir
 from ExtractZIP import file_name
 from MarkPiont import get_alert_list
-from pprint import pprint
 
 
 def create_template():
@@ -24,22 +23,23 @@ def create_template():
 
     # 格式設置
     ws.row_dimensions[1].height = 40
-    fille = PatternFill('solid', fgColor='adaaa6')  # 设置填充颜色为 橙色
-    fille_NG = PatternFill('solid', fgColor='ff99cc')  # 设置填充颜色为 紅色
-    fille_OK = PatternFill('solid', fgColor='AACF91')  # 设置填充颜色为 綠色
+    fill_head = PatternFill('solid', fgColor='adaaa6')  # 设置填充颜色为 灰色
+    fill_ng = PatternFill('solid', fgColor='ff99cc')  # 设置填充颜色为 紅色
+    fill_ok = PatternFill('solid', fgColor='aacf91')  # 设置填充颜色为 綠色
+    fill_error = PatternFill('solid', fgColor='ffcf71')  # 设置填充颜色为 橙色
     font = Font(u'Calibri', size=12, color='ffffff', bold=True,
                 italic=False, strike=False)  # 设置字体样式
-    ws['a1'].fill = fille  # 应用填充样式在A1单元格
-    ws['b1'].fill = fille  # 应用填充样式在B1单元格
-    ws['c1'].fill = fille  # 应用填充样式在C1单元格
-    ws['d1'].fill = fille  # 应用填充样式在D1单元格
-    ws['e1'].fill = fille  # 应用填充样式在E1单元格
-    ws['f1'].fill = fille  # 应用填充样式在F1单元格
-    ws['g1'].fill = fille  # 应用填充样式在G1单元格
-    ws['h1'].fill = fille  # 应用填充样式在H1单元格
-    ws['i1'].fill = fille  # 应用填充样式在I1单元格
-    ws['j1'].fill = fille  # 应用填充样式在J1单元格
-    ws['k1'].fill = fille  # 应用填充样式在J1单元格
+    ws['a1'].fill = fill_head  # 应用填充样式在A1单元格
+    ws['b1'].fill = fill_head  # 应用填充样式在B1单元格
+    ws['c1'].fill = fill_head  # 应用填充样式在C1单元格
+    ws['d1'].fill = fill_head  # 应用填充样式在D1单元格
+    ws['e1'].fill = fill_head  # 应用填充样式在E1单元格
+    ws['f1'].fill = fill_head  # 应用填充样式在F1单元格
+    ws['g1'].fill = fill_head  # 应用填充样式在G1单元格
+    ws['h1'].fill = fill_head  # 应用填充样式在H1单元格
+    ws['i1'].fill = fill_head  # 应用填充样式在I1单元格
+    ws['j1'].fill = fill_head  # 应用填充样式在J1单元格
+    ws['k1'].fill = fill_head  # 应用填充样式在J1单元格
     ws['a1'].font = font  # 应用填充样式在A1单元格
     ws['b1'].font = font  # 应用填充样式在B1单元格
     ws['c1'].font = font  # 应用填充样式在C1单元格
@@ -66,9 +66,9 @@ def create_template():
     ws.column_dimensions['A'].width = 15
     ws.column_dimensions['B'].width = 25
     ws.column_dimensions['C'].width = 15
-    ws.column_dimensions['D'].width = 25
-    ws.column_dimensions['E'].width = 25
-    ws.column_dimensions['F'].width = 25
+    ws.column_dimensions['D'].width = 35
+    ws.column_dimensions['E'].width = 35
+    ws.column_dimensions['F'].width = 35
     ws.column_dimensions['G'].width = 15
     ws.column_dimensions['H'].width = 15
     ws.column_dimensions['I'].width = 15
@@ -101,8 +101,7 @@ def create_template():
             # 3.插入第三欄Test Time信息：
             print(
                 f"-----3.正在插入C欄 Test Time 信息: {test_time} -------------")
-            ws.cell(row=x, column=y +
-                    2).value = test_time  # Time
+            ws.cell(row=x, column=y + 2).value = test_time  # Time
 
         # 4.插入第四欄BGI Image信息：
         print('-----4.正在插入D欄 BGI圖片--------------------')
@@ -130,7 +129,6 @@ def create_template():
             # 图片插入名称对应单元格
             ws.add_image(img)
 
-
         # 7.插入第七欄BGI Issue信息：
         print('-----7.正在插入H欄 BGI Ml infor--------------------')
         for text_path in file_name(unit_folder_path, r'.*(SOBBK|ICEBK|BGI)\.txt'):
@@ -143,21 +141,20 @@ def create_template():
                 content = f.read()
             result = re.findall(r'^\{.*}$', content, re.M)
             if result:
-                result1 = re.findall('.*,"issues":\[(.*)],.*', content)
-                result1 = " ".join(result1)
-                if not result1.strip():
+                result_info = loads(result[0])
+                ml_status = result_info.get('decision', 999)
+
+                if ml_status == 0:
                     # print("該機臺bgi無異常")
                     ws.cell(row=x, column=y + y_offset).value = "no issue"
-                    ws.cell(row=x, column=y + y_offset).fill = fille_OK
+                    ws.cell(row=x, column=y + y_offset).fill = fill_ok
                 else:
-                    result1 = eval(result1)
-                    # print(result1)
-                    ws.cell(row=x, column=y + y_offset).value = str(result1)
-                    ws.cell(row=x, column=y + y_offset).fill = fille_NG
+                    result1 = ";\n".join(result_info.get('issues', []))
+                    ws.cell(row=x, column=y + y_offset).value = result1
+                    ws.cell(row=x, column=y + y_offset).fill = fill_ng
             else:
-                result1 = 'not found response body'
-                ws.cell(row=x, column=y + y_offset).value = str(result1)
-                ws.cell(row=x, column=y + y_offset).fill = fille_NG
+                ws.cell(row=x, column=y + y_offset).value = 'not found response body'
+                ws.cell(row=x, column=y + y_offset).fill = fill_error
         print(
             f"*****第 {kk} 個機臺信息插入完成************************************************************")
         print("                                                     ")
@@ -166,7 +163,7 @@ def create_template():
 
     max_rows = ws.max_row  # 获取最大行
     max_columns = ws.max_column  # 获取最大列
-    align = Alignment(horizontal='center', vertical='center')
+    align = Alignment(horizontal='center', vertical='center', wrapText=True)
     # openpyxl的下标从1开始
     for iiii in range(1, max_rows + 1):
         for jjjj in range(1, max_columns + 1):

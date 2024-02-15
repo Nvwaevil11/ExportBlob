@@ -1,70 +1,80 @@
 from openpyxl.drawing.image import Image
-from openpyxl.drawing.xdr import XDRPoint2D, XDRPositiveSize2D
-from openpyxl.drawing.spreadsheet_drawing import AbsoluteAnchor
+from openpyxl.styles import PatternFill, Font, Alignment
+from openpyxl.drawing.spreadsheet_drawing import AnchorMarker, TwoCellAnchor
 from openpyxl.utils.units import pixels_to_EMU
 from openpyxl.utils import get_column_letter
+from openpyxl.utils.dataframe import dataframe_to_rows
 import openpyxl
+from pathlib import Path
+from pandas import DataFrame
+
+fill_head = PatternFill('solid', fgColor='8db4e2')  # 设置填充颜色为 灰色
+font_head = Font(u'Calibri', size=14, color='000000', bold=True,
+                 italic=False, strike=False)  # 设置字体样式
+font_body = Font(u'Calibri', size=12, color='000000', bold=False,
+                 italic=False, strike=False)  # 设置字体样式
+align = Alignment(horizontal='center', vertical='center', wrapText=True)
 
 
-class AddImage():
+class MLAlertTable:
 
-    def __init__(self):
+    def __init__(self, test_info: DataFrame):
         self.workbook = openpyxl.Workbook()
         self.worksheet = self.workbook.active
+        self.test_info = test_info
+        self.fill_data_frame()
+        self.set_header()
+        self.set_body()
 
-    def get_absolute(self, row, col):
-        """
-        获取单元格的右下方绝对位置（单位：像素），及单元格的宽高
-        """
-        x = 0
-        y = 0
-        # get_column_letter(int)把整数转换为Excel中的列索引
-        col_letter = get_column_letter(col)
-        # 获取每列的列宽
-        width = self.worksheet.column_dimensions[col_letter].width
-        # 计算第一列到目标列的总宽
-        for i in range(col):
+    def fill_data_frame(self):
+        for row in dataframe_to_rows(self.test_info, index=False, header=True):
+            self.worksheet.append(row)
+
+    def set_header(self):
+        self.worksheet.row_dimensions[1].height = 40
+        for i in range(self.worksheet.max_column):
             col_letter = get_column_letter(i + 1)
-            fcw = self.worksheet.column_dimensions[col_letter].width
-            x += fcw
-        # 如果Excel中高为默认值时，openpyxl却没有值为NoneValue，这一点我很奇怪。
-        if not self.worksheet.row_dimensions[col].height:
-            self.worksheet.row_dimensions[col].height = 13.5
-            height = 13.5  # Excel默认列宽为13.5
-        else:
-            height = self.worksheet.row_dimensions[col].height
-        # 计算第一行到目标行的总高
-        for j in range(row):
-            if not self.worksheet.row_dimensions[j + 1].height:
-                self.worksheet.row_dimensions[j + 1].height = 13.5
-                fch = 13.5
-            else:
-                fch = self.worksheet.row_dimensions[j + 1].height
-            y += fch
-            # 把高单位转换为像素
-        height = (height * 18) // 13.5  # 一个单元格高为13.5，像素为18
-        # 把宽单位转换为像素
-        width = (width * 72) // 9  # 一个单元格为宽为9，像素为72
-        x = (x * 72) // 9
-        y = (y * 18) // 13.5
-        return x, y, width, height
+            print(col_letter)
+            ccw = self.worksheet.column_dimensions[col_letter].width
+            head = self.worksheet[f'{col_letter}1']
+            head.fill = fill_head
+            head.font = font_head
+            head.alignment = align
 
-    def insert_image(self, row, col, end_row, end_col, image_url, image_size=None):
+            if ccw < 35 and head.value.endswith('JPG'):
+                self.worksheet.column_dimensions[col_letter].width = 35
+            elif ccw < 20:
+                self.worksheet.column_dimensions[col_letter].width = 20
 
+    def set_body(self):
+        for j in range(1, self.worksheet.max_row + 1):
+            self.worksheet.row_dimensions[j].height = 85
+            for i in range(1, self.worksheet.max_column + 1):
+                cell = self.worksheet.cell(j, i)
+                cell.alignment = align
+                cell.font = font_body
+
+    def insert_image_to_cell(self, row, col, image_url):
         img = Image(image_url)
-        if image_size:
-            img.width, img.height = image_size
         w, h = img.width, img.height
-        x1, y1, w1, h1 = self.get_absolute(row, col)
-        x2, y2, w2, h2 = self.get_absolute(end_row, end_col)
-        x = (x2 + x1 - w1 - h) // 2
-        y = (y2 + y1 - h1 - w) // 2
-        p2e = pixels_to_EMU  # openpylx自带的像素转EMU
-        pos = XDRPoint2D(p2e(x), p2e(y))  # 设置绝对位置
-        size = XDRPositiveSize2D(p2e(w), p2e(h))  # 图片大小
-        img.anchor = AbsoluteAnchor(pos=pos, ext=size)
+        ratio = w / h
+        print(w, h, ratio)
+        x, y, ww, hh = (325.0, 0.0, 240, 113.0)
+        print(x, y, ww, hh)
+        hhh = hh - 6
+        www = int(hhh * ratio)
+        xx = x + (ww - www) // 2
+        yy = y + 3
+        _from = AnchorMarker(col, 50000, row, 50000)
+        _to = AnchorMarker(col + 1, -50000, row + 1, -50000)
+        img.size = (www, hhh)
+        img.anchor = TwoCellAnchor('twoCell', _from, _to)
         self.worksheet.add_image(img)
 
 
 if __name__ == '__main__':
-    pass
+    add_image = MLAlertTable()
+    print(add_image.insert_image_to_cell(1, 3,
+                                         'D:/Users/xiaoze_wang/Desktop/ExportBlob_v3.0/ParseFile/DataZip/Data/C441NW3L6W_FAIL_20240207023114/D83.C441NW3L6W.BGS.20240207.023457.BGI.JPG',
+                                         ))
+    add_image.workbook.save(r'D:\Users\Xiaoze_Wang\Desktop\BGS ML Alert SN re-judge tracker list2.xlsx')
