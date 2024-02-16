@@ -38,20 +38,20 @@ def function_timer(func):  # 計時器
 
 
 def init_folders():
-    print(f'---1.初始化根级目录', end='....->')
+    print('---1.初始化根级目录', end='....->')
     shutil.rmtree(load_dir, ignore_errors=True)
     shutil.rmtree(par_dir, ignore_errors=True)
     if not export_dir.exists():
         export_dir.mkdir(parents=True, exist_ok=True)
-    print(f'Done!!')
+    print('Done!!')
 
-    print(f'---2.创建子级目录', end='....->')
+    print('---2.创建子级目录', end='....->')
     alert_fail_units_dir.mkdir(parents=True, exist_ok=True)
     data_dir.mkdir(parents=True, exist_ok=True)
     alert_fail_units_pardir.mkdir(parents=True, exist_ok=True)
     data_pardir.mkdir(parents=True, exist_ok=True)
     data_zippardir.mkdir(parents=True, exist_ok=True)
-    print(f'Done!!')
+    print('Done!!')
 
 
 def select_file():
@@ -59,14 +59,14 @@ def select_file():
     global ml_station
     root = tk.Tk()
     root.withdraw()  # 隐藏主窗口
-    print(f"---3.选择AlertFailUnits文件，", end='....->')
+    print("---3.选择AlertFailUnits文件，", end='....->')
     file_path = filedialog.askopenfilename(title='请选择AlertFailUnits文件',
                                            filetypes=[('AlertAbnormalUnits文件',
-                                                       f'*_ml_alert_abnormal_units_ae34_*.csv;'
-                                                       f'*_ml_alert_abnormal_units_station1614_*.csv'),
+                                                       '*_ml_alert_abnormal_units_ae34_*.csv;'
+                                                       '*_ml_alert_abnormal_units_station1614_*.csv'),
                                                       ('AlertFailUnits文件',
-                                                       f'*_ml_alert_fail_units_ae34_*.csv;'
-                                                       f'*_ml_alert_fail_units_station1614_*.csv'),
+                                                       '*_ml_alert_fail_units_ae34_*.csv;'
+                                                       '*_ml_alert_fail_units_station1614_*.csv'),
                                                       ])
     if file_path != '':
         shutil.copy(file_path, alert_fail_units_dir)
@@ -75,12 +75,12 @@ def select_file():
             ml_station = 'CGS'
         elif '_station1614_' in file_path:
             ml_station = 'BGS'
-        print(f"Done!!")
-        print(f'-----复制选择的文件[{file_path}] 到 文件夹[{alert_fail_units_dir}].')
+        print("Done!!")
+        print('-----复制选择的文件[{file_path}] 到 文件夹[{alert_fail_units_dir}].')
     else:
-        print(f'Error!!  --不可以取消操作,会退出哦..')
+        print('Error!!  --不可以取消操作,会退出哦..')
         raise FileNotFoundError('用户选择了取消,结束进程...')
-    print(f"---4.选择Bolb压缩包文件(可多选)，", end='....->')
+    print("---4.选择Bolb压缩包文件(可多选)，", end='....->')
     file_path1 = filedialog.askopenfilenames(title='请选择Insight下载的Bolb压缩包文件',
                                              filetypes=[('Bolb压缩包文件', 'data*.zip')])
 
@@ -90,7 +90,7 @@ def select_file():
             shutil.copy(zip_data, data_dir)
             print(f'-----复制选择的文件[{zip_data}] 到 文件夹[{data_dir}].')
     else:
-        print(f'Error!!  --不可以取消操作,会退出哦..')
+        print('Error!!  --不可以取消操作,会退出哦..')
         raise FileNotFoundError('用户选择了取消,结束进程...')
 
 

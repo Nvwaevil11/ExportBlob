@@ -208,8 +208,6 @@ if __name__ == "__main__":
     select_file()
     decompression_ml_image_txt()
     alert_list = get_alert_list()
-    from LoadFilePath import ml_station
-
     pprint(alert_list)
     new_list = []
     for test_folder_path, test_data in alert_list.items():
