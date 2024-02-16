@@ -3,15 +3,15 @@
 # @Author: Nan1_Chen
 # @Mail: Nan1_Chen@pegatroncorp.com
 
+import re
 # @Software: PyCharm
 # --- --- --- --- --- --- --- --- ---
 import shutil
 import tarfile
-from zipfile import ZipFile
 from pathlib import Path
-import re
+from zipfile import ZipFile
+
 from LoadFilePath import data_dir, data_zippardir, data_pardir
-from pprint import pprint
 
 
 def unzip2folder(filename: Path, out_path: Path = None):

@@ -12,7 +12,7 @@ from openpyxl.styles import Font
 from openpyxl.styles import PatternFill, Alignment
 from LoadFilePath import data_pardir, export_dir
 from ExtractZIP import file_name
-from MarkPiont import get_alert_list
+from MarkPoint import get_alert_list
 
 
 def create_template():

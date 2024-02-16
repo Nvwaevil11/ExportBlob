@@ -1,4 +1,4 @@
-# @File: MarkPiont.py
+# @File: MarkPoint.py
 # @Time: 2024/1/28 下午 02:55
 # @Author: Nan1_Chen
 # @Mail: Nan1_Chen@pegatroncorp.com
@@ -29,6 +29,22 @@ response_status = {200: 'OK', 400: 'Bad request', 403: 'Forbidden', 404: 'Not fo
                    500: 'Internal server error', 503: 'Service unavailable', 520: 'Internal model error'}
 
 ml_file_suffixes = ['txt', 'JPG']
+
+
+# 16进制颜色格式颜色转换为RGB格式
+def hex_to_rgb(hex_color_code: str, reverse: bool = False) -> tuple:
+    if hex_color_code.startswith('#'):
+        r = int(hex_color_code[1:3], 16)
+        g = int(hex_color_code[3:5], 16)
+        b = int(hex_color_code[5:7], 16)
+    else:
+        r = int(hex_color_code[0:2], 16)
+        g = int(hex_color_code[2:4], 16)
+        b = int(hex_color_code[4:6], 16)
+    if reverse:
+        return b, g, r
+    else:
+        return r, g, b
 
 
 def get_alert_list() -> dict:
@@ -79,7 +95,6 @@ class UnitFolder(object):
         return self._station_name
 
     def parse_ml_folder(self) -> dict:
-        ml_folder_files = {}
         ml_files = file_name(
             self._folder_path, self._ml_pattern)
         if ml_files:
@@ -134,8 +149,7 @@ def mark_bgi_ml_image():
         for ml_response_path in file_name(unit_folder_path, r'.*(SOBBK|ICEBK|BGI|SOB|ICE)\.txt'):
             ml_type = re.findall(
                 r'.*(SOBBK|ICEBK|BGI|SOB|ICE)\.txt', ml_response_path.name)[0]
-            pic_path = ml_response_path.parent / \
-                       (ml_response_path.stem + '.JPG')
+            pic_path = ml_response_path.parent / (ml_response_path.stem + '.JPG')
             if not pic_path.exists():
                 pic_path = file_name(unit_folder_path, fr'.*{ml_type}\.JPG')[0]
             print(f"----第 {kkk + 1} 個機臺{ml_type}信息檢查开始{pic_path.exists()}")
@@ -158,7 +172,8 @@ def mark_bgi_ml_image():
             else:
                 ml_result = {}
             ml_pass_fail = ml_result.get('decision', -2)
-            pic_new_name = f'{ml_type}_{"_".join(pic_path.stem.split('.')[:3])}_{ml_pass_fail}_{status_code}({response_message})'
+            pic_new_name = (f'{ml_type}_{"_".join(pic_path.stem.split('.')[:3])}_'
+                            f'{ml_pass_fail}_{status_code}({response_message})')
             target_pic_path = str(
                 pic_path.parent / f'{pic_new_name}{pic_path.suffix}')
             print('------', f'目标图片路径{target_pic_path}')
@@ -166,7 +181,7 @@ def mark_bgi_ml_image():
                 print('------', f"該機臺{ml_type}無異常")
                 img = cv2.imread(str(pic_path))
                 cv2.putText(img, pic_new_name, (200, 100),
-                            font, 3, (255, 0, 0), 5)
+                            font, 3, hex_to_rgb('#0000FF', True), 5)
                 cv2.imwrite(target_pic_path, img)
             else:
                 print('------', ml_result)
@@ -178,12 +193,11 @@ def mark_bgi_ml_image():
                 for box in boxes:
                     hh, ww, xx, yy = box['bbox'].values()
                     cv2.rectangle(
-                        img, (xx, yy), (xx + ww, yy + hh), (0, 0, 255), 2)
-
+                        img, (xx, yy), (xx + ww, yy + hh), hex_to_rgb('#FF0000', True), 2)
                     cv2.putText(
-                        img, box['class_name'], (xx - 25, yy - 25), font, 1.5, (0, 0, 255), 3)
+                        img, box['class_name'], (xx - 25, yy - 25), font, 1.5, hex_to_rgb('#FF0000', True), 3)
                 cv2.putText(img, pic_new_name, (200, 100),
-                            font, 3, (255, 0, 0), 5)
+                            font, 3, hex_to_rgb('#ff0000', True), 5)
                 cv2.imwrite(target_pic_path, img)
             print(f"----第 {kkk + 1} 個機臺{ml_type}信息檢查完成")
         print(f"--完成检查第 {kkk + 1} 個機臺{unit_folder_path.name} ML 信息\n")
@@ -202,13 +216,13 @@ if __name__ == "__main__":
         test_folder = UnitFolder(data_pardir / test_folder_path, test_data)
         new_list.append(test_folder.parse_ml_folder())
     print(new_list)
-    df = pd.DataFrame(data=new_list)
-    print(df)
-    cols = list(df.columns)
+    df1 = pd.DataFrame(data=new_list)
+    print(df1)
+    cols = list(df1.columns)
     new_cols = ['serial_number', 'uut_start', 'display_name', 'station_id', 'model_sob_decision', 'model_ice_decision',
                 'model_bgi_decision', 'model_sob_no_retest', 'model_sob_response_status', 'model_ice_no_retest',
                 'model_ice_response_status', 'model_bgi_response_status', 'model_bgi_no_retest', 'BGI_JPG', 'BGI_txt',
                 'ICE_JPG', 'ICE_txt', 'SOB_JPG', 'SOB_txt']
-    df = df[[_ for _ in new_cols if _ in cols]]
-    add_image = MLAlertTable(test_info=df)
+    df1 = df1[[_ for _ in new_cols if _ in cols]]
+    add_image = MLAlertTable(test_info=df1)
     add_image.workbook.save(r'D:\Users\Xiaoze_Wang\Desktop\BGS ML Alert SN re-judge tracker list2.xlsx')

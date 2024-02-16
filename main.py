@@ -6,8 +6,7 @@ import datetime
 import Create_Template
 import ExtractZIP
 import LoadFilePath
-import MarkPiont
-from pprint import pprint
+import MarkPoint
 
 current_start_time = datetime.datetime.now()
 
@@ -17,7 +16,7 @@ def main():
     LoadFilePath.init_folders()
     LoadFilePath.select_file()
     ExtractZIP.decompression_ml_image_txt()
-    MarkPiont.mark_bgi_ml_image()
+    MarkPoint.mark_bgi_ml_image()
     Create_Template.create_template()
     current_end_time = datetime.datetime.now()
     print(f"結束時間：{current_end_time}")
