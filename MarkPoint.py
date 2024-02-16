@@ -48,8 +48,20 @@ response_status = {
     500: "Internal server error",
     503: "Service unavailable",
     520: "Internal model error",
+    0: "ML Pass",
+    -1: "ML Error",
+    -2: "Unsuccessful Response",
+    -3: "ML Request Timeout",
+    -4: "Connection Error"
 }
 
+reasons = {
+    0: "ML Pass",
+    -1: "ML Error",
+    -2: "Unsuccessful Response",
+    -3: "ML Request Timeout",
+    -4: "Connection Error",
+}
 ml_file_suffixes = ["txt", "JPG"]
 
 
@@ -88,6 +100,13 @@ def get_alert_list() -> dict:
                     col.replace("response_code", "response_status"),
                     df[col].apply(lambda x: response_status.get(x, x)),
                 )
+            if col.endswith("_decision"):
+                df.insert(
+                    loc,
+                    col.replace("_decision", "_reason"),
+                    df[col].apply(lambda x: reasons.get(x, x)),
+                )
+
         return df.transpose().to_dict()
     else:
         raise FileNotFoundError("alert_file文件丢失")
@@ -144,7 +163,7 @@ class UnitFolder(object):
 
 
 def parse_ml_folder(
-        unit_folder: Path, ml_types: list = None, file_suffixes: list = None
+    unit_folder: Path, ml_types: list = None, file_suffixes: list = None
 ) -> dict:
     if ml_types is None:
         ml_types = ["SOBBK", "ICEBK", "BGI", "SOB", "ICE"]
@@ -173,7 +192,7 @@ def logmod(num: int):
     while True:
         a = int(log2(num))
         ab.append(a + 1)
-        num = num - 2 ** a
+        num = num - 2**a
         # print(num)
         if num == 0:
             break
@@ -189,7 +208,7 @@ def mark_bgi_ml_image():
         print(f"--开始检查第 {kkk + 1} 個機臺{unit_folder_path.name} ML 信息")
         pprint(parse_ml_folder(unit_folder_path, ml_types=ml_types))
         for ml_response_path in file_name(
-                unit_folder_path, r".*(SOBBK|ICEBK|BGI|SOB|ICE)\.txt"
+            unit_folder_path, r".*(SOBBK|ICEBK|BGI|SOB|ICE)\.txt"
         ):
             ml_type = re.findall(
                 r".*(SOBBK|ICEBK|BGI|SOB|ICE)\.txt", ml_response_path.name
@@ -290,13 +309,17 @@ if __name__ == "__main__":
             "model_sob_decision": "sob_decision",
             "model_ice_decision": "ice_decision",
             "model_bgi_decision": "bgi_decision",
+            "model_ice_extra_screw_decision": "extra_screw_decision",
+            "model_sob_reason": "sob_reason",
+            "model_ice_reason": "ice_reason",
+            "model_bgi_reason": "bgi_reason",
+            "model_ice_extra_screw_reason": "extra_screw_reason",
             "model_sob_no_retest": "sob_no_retest",
-            "model_sob_response_status": "sob_response_status",
+            "model_sob_response_status": "sob_status",
             "model_ice_no_retest": "ice_no_retest",
-            "model_ice_response_status": "ice_response_status",
-            "model_bgi_response_status": "bgi_response_status",
-            "model_bgi_no_retest": "bgi_no_retest",
-            "cgs_extra_screw_model_decision": "extra_screw_decision"
+            "model_ice_response_status": "ice_status",
+            "model_bgi_response_status": "bgi_status",
+            "model_bgi_no_retest": "bgi_no_retest"           
         },
         inplace=True,
     )
@@ -308,20 +331,15 @@ if __name__ == "__main__":
         "station_id",
         "sob_decision",
         "ice_decision",
-        "extra_screw_decision",
         "bgi_decision",
-        "sob_no_retest",
-        "sob_response_status",
-        "ice_no_retest",
-        "ice_response_status",
-
-        "bgi_response_status",
-        "bgi_no_retest",
+        "sob_reason",
+        "ice_reason",
+        "bgi_reason",
         "bgi_pic",
-        "bgi_txt",
-        "ice_pic",
-        "ice_txt",
+        "ice_pic",       
         "sob_pic",
+        "bgi_txt",
+        "ice_txt",
         "sob_txt",
     ]
     df1 = df1[[_ for _ in new_cols if _ in cols]]
