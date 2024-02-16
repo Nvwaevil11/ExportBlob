@@ -40,7 +40,7 @@ class MLAlertTable:
             head.font = font_head
             head.alignment = align
 
-            if ccw < 27 and head.value.endswith('JPG'):
+            if ccw < 27 and head.value.endswith('_pic'):
                 self.worksheet.column_dimensions[col_letter].width = 27
             elif ccw < 20:
                 self.worksheet.column_dimensions[col_letter].width = 20
@@ -54,8 +54,9 @@ class MLAlertTable:
                 cell = self.worksheet.cell(j, i)
                 cell.alignment = align
                 cell.font = font_body
-                if head.endswith('_JPG') and cell.value != 'NA':
+                if head.endswith('_pic') and cell.value != 'NA':
                     self.insert_image_to_cell(j - 1, i - 1, cell.value)
+                    cell.value = ''
 
     def get_cell_width_height(self, row, col) -> tuple:
         col_letter = get_column_letter(col + 1)
@@ -68,8 +69,8 @@ class MLAlertTable:
 
     def insert_image_to_cell(self, row, col, image_url):
         img = Image(image_url)
-        _from = AnchorMarker(col, 50000, row, 50000)
-        _to = AnchorMarker(col + 1, -50000, row + 1, -50000)
+        _from = AnchorMarker(col, 100000, row, 100000)
+        _to = AnchorMarker(col + 1, -100000, row + 1, -100000)
         img.anchor = TwoCellAnchor('twoCell', _from, _to)
         self.worksheet.add_image(img)
 

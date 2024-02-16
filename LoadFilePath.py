@@ -76,7 +76,7 @@ def select_file():
         elif '_station1614_' in file_path:
             ml_station = 'BGS'
         print("Done!!")
-        print('-----复制选择的文件[{file_path}] 到 文件夹[{alert_fail_units_dir}].')
+        print(f'-----复制选择的文件[{file_path}] 到 文件夹[{alert_fail_units_dir}].')
     else:
         print('Error!!  --不可以取消操作,会退出哦..')
         raise FileNotFoundError('用户选择了取消,结束进程...')
