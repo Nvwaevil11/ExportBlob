@@ -18,11 +18,11 @@ from MarkPoint import get_alert_list
 def create_template():
     alert_list = get_alert_list()
     wb = openpyxl.Workbook()
-    ws = wb.active
+    ws = wb.worksheets[0]
     print(type(ws))
 
     # 格式設置
-    ws.row_dimensions[1].height = 40
+    ws.row_dimensions[1].height = 40 # type: ignore
     fill_head = PatternFill('solid', fgColor='adaaa6')  # 设置填充颜色为 灰色
     fill_ng = PatternFill('solid', fgColor='ff99cc')  # 设置填充颜色为 紅色
     fill_ok = PatternFill('solid', fgColor='aacf91')  # 设置填充颜色为 綠色
@@ -122,10 +122,10 @@ def create_template():
             img = Image(image)
             img.anchor = img_column + str(x)
             # 设置图片的大小
-            img.width, img.height = (100, 100)
+            img.width, img.height = 100, 100 # type: ignore
             # 设置表格的宽20和高85
             ws.column_dimensions[img_column].width = 20
-            ws.row_dimensions[x].height = 85
+            ws.row_dimensions[x].height = 85 # type: ignore
             # 图片插入名称对应单元格
             ws.add_image(img)
 
@@ -136,7 +136,7 @@ def create_template():
             text_type = re.findall(
                 r'.*(SOBBK|ICEBK|BGI|SOB|ICE)\.txt', text_path.name)[0]
             y_offset = {'SOB': 8, 'ICE': 7, 'SOBBK': 8,
-                        'ICEBK': 7, 'BGI': 6}.get(text_type, '6')
+                        'ICEBK': 7, 'BGI': 6}.get(text_type, 6)
             with open(text, "r", encoding='utf-8') as f:
                 content = f.read()
             result = re.findall(r'^\{.*}$', content, re.M)

@@ -48,6 +48,7 @@ response_status = {
     500: "Internal server error",
     503: "Service unavailable",
     520: "Internal model error",
+    1:"ML Fail",
     0: "ML Pass",
     -1: "ML Error",
     -2: "Unsuccessful Response",
@@ -56,6 +57,7 @@ response_status = {
 }
 
 reasons = {
+    1:"ML Fail",
     0: "ML Pass",
     -1: "ML Error",
     -2: "Unsuccessful Response",
@@ -163,7 +165,7 @@ class UnitFolder(object):
 
 
 def parse_ml_folder(
-    unit_folder: Path, ml_types: list = None, file_suffixes: list = None
+    unit_folder: Path, ml_types: list|None = None, file_suffixes: list|None = None
 ) -> dict:
     if ml_types is None:
         ml_types = ["SOBBK", "ICEBK", "BGI", "SOB", "ICE"]
@@ -186,7 +188,7 @@ def parse_ml_folder(
 
 
 def logmod(num: int):
-    if num <= 0:
+    if num <= 0: 
         return []
     ab = []
     while True:
@@ -342,8 +344,7 @@ if __name__ == "__main__":
         "ice_txt",
         "sob_txt",
     ]
+    df1.index = pd.Index(name='No.',data=range(1,len(df1)+1))
+    df1.to_csv(r"D:\Users\Xiaoze_Wang\Desktop\BGS ML Alert SN re-judge tracker list2.csv",index_label='No.')
     df1 = df1[[_ for _ in new_cols if _ in cols]]
     add_image = MLAlertTable(test_info=df1)
-    add_image.workbook.save(
-        r"D:\Users\Xiaoze_Wang\Desktop\BGS ML Alert SN re-judge tracker list2.xlsx"
-    )
