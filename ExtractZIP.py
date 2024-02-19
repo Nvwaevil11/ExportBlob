@@ -2,19 +2,17 @@
 # @Time: 2024/1/28 下午 01:39
 # @Author: Nan1_Chen
 # @Mail: Nan1_Chen@pegatroncorp.com
-
-import re
 # @Software: PyCharm
 # --- --- --- --- --- --- --- --- ---
+import re
 import shutil
 import tarfile
 from pathlib import Path
 from zipfile import ZipFile
-
 from LoadFilePath import data_dir, data_zippardir, data_pardir
 
 
-def unzip2folder(filename: Path, out_path: Path = None):
+def unzip2folder(filename: Path, out_path: Path|None = None):
     if not out_path:
         out_path = filename.parent
     with ZipFile(filename) as zip1:
@@ -25,7 +23,7 @@ def unzip2folder(filename: Path, out_path: Path = None):
                         shutil.copyfileobj(source, target_file)
 
 
-def untgz2folder(filename: Path, out_path: Path = None, filter_str: str = None):
+def untgz2folder(filename: Path, out_path: Path|None = None, filter_str: str|None = None):
     member: tarfile.TarInfo
     if not out_path:
         out_path = filename.parent
@@ -44,9 +42,8 @@ def untgz2folder(filename: Path, out_path: Path = None, filter_str: str = None):
                 source = tar1.extractfile(member)
                 target_file = open(
                     target_folder / Path(member.name).name, 'wb')
-                with source, target_file:
-                    shutil.copyfileobj(source, target_file)
-    return
+                with source, target_file: # type: ignore
+                    shutil.copyfileobj(source, target_file) # type: ignore
 
 
 def file_name(
